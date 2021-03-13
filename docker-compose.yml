@@ -1,7 +1,7 @@
 version: '3.1'
 services:
   springboot:
-    image: deviprasaddev/maven-web-demo:8
+    image: deviprasaddev/maven-web-demo:latest
     restart: always
     ports:
     - 9090:8080
