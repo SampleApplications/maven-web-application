@@ -1,0 +1,33 @@
+node {
+    
+    stage('Code checkout'){
+        git credentialsId: 'daabf523-6aee-4fd6-90cd-92703ea3b257', url: 'https://github.com/SampleApplications/maven-web-application.git'
+    }
+    
+    stage('Build war file'){
+      def mavenHome =  tool name: "Maven-3.6.1", type: "maven"
+      def mavenCMD = "${mavenHome}/bin/mvn"
+      sh "${mavenCMD} clean package"
+    }
+    
+    stage('Build docker image'){
+        sh 'docker build -t deviprasaddev/maven-web-demo:${BUILD_NUMBER} .'
+    }
+    
+    stage('Push image to repo'){
+        sh 'docker login -u deviprasaddev -p Passw0rd_dev'
+        sh 'docker push deviprasaddev/maven-web-demo:${BUILD_NUMBER}'
+    }
+    
+    stage('Remove image from jenkins server'){
+        sh 'docker rmi -f deviprasaddev/maven-web-demo:${BUILD_NUMBER}'
+    }
+    
+    stage('Deployment'){
+       sshagent(['Docker_Swarm_Manager_SSH']) {
+            sh 'scp -o StrictHostKeyChecking=no  docker-compose.yml ubuntu@172.31.19.247:~'
+		    //sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.19.247 docker stack rm mavenweb'
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.19.247 docker stack deploy --prune --compose-file docker-compose.yml mavenweb'
+      }   
+    }
+}
